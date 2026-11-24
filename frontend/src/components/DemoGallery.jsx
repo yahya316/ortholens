@@ -22,18 +22,18 @@ export default function DemoGallery({ onPick, disabled }) {
   }
 
   return (
-    <div className="rounded-lg border border-violet-300 bg-violet-50 p-3">
-      <p className="mb-2 text-sm font-medium text-violet-900">Demo images (click to analyse)</p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+    <div className="card border-slate-200 bg-slate-50">
+      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-600">Sample Demo Images (click to analyse)</p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {files.map((name) => (
           <button
             key={name}
             disabled={disabled}
             onClick={() => pick(name)}
-            className="overflow-hidden rounded border border-violet-200 bg-white text-left disabled:opacity-50"
+            className="group overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-sm transition hover:border-blue-400 disabled:opacity-50"
           >
             <img src={`/demo/${encodeURIComponent(name)}`} alt={name} loading="lazy" className="aspect-square w-full object-cover" />
-            <span className="block truncate px-1 py-0.5 text-xs">{name}</span>
+            <span className="block truncate px-2 py-1.5 text-xs text-slate-700 font-medium">{name}</span>
           </button>
         ))}
       </div>

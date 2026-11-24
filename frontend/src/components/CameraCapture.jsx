@@ -51,27 +51,29 @@ export default function CameraCapture({ onCapture, onCancel }) {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+      <div className="card border-red-200 bg-red-50 p-4 text-sm text-red-800">
         <p>{error}</p>
-        <button onClick={onCancel} className="mt-3 rounded bg-slate-800 px-4 py-2 text-white">Back</button>
+        <button onClick={onCancel} className="mt-3 btn-secondary">Back</button>
       </div>
     );
   }
   return (
-    <div className="space-y-3">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        onLoadedMetadata={() => setReady(true)}
-        className="w-full rounded-lg bg-black"
-      />
+    <div className="card space-y-4">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-900">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          onLoadedMetadata={() => setReady(true)}
+          className="mx-auto max-h-[60vh] w-full object-contain"
+        />
+      </div>
       <div className="flex gap-3">
-        <button onClick={capture} disabled={!ready} className="flex-1 rounded bg-blue-600 px-4 py-3 font-medium text-white disabled:opacity-50">
-          Capture
+        <button onClick={capture} disabled={!ready} className="btn-primary flex-1">
+          Capture photo
         </button>
-        <button onClick={onCancel} className="rounded border border-slate-300 px-4 py-3">Cancel</button>
+        <button onClick={onCancel} className="btn-secondary">Cancel</button>
       </div>
     </div>
   );

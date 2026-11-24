@@ -1,9 +1,9 @@
 const STATUS_STYLE = {
-  ok: ["border-blue-300 bg-blue-50 text-blue-900"],
-  no_fracture_detected: ["border-emerald-300 bg-emerald-50 text-emerald-900"],
-  retake: ["border-amber-300 bg-amber-50 text-amber-900"],
-  out_of_scope: ["border-amber-300 bg-amber-50 text-amber-900"],
-  error: ["border-red-300 bg-red-50 text-red-900"],
+  ok: ["border-blue-200 bg-blue-50/70 text-blue-950"],
+  no_fracture_detected: ["border-emerald-200 bg-emerald-50/70 text-emerald-950"],
+  retake: ["border-amber-200 bg-amber-50/70 text-amber-950"],
+  out_of_scope: ["border-amber-200 bg-amber-50/70 text-amber-950"],
+  error: ["border-red-200 bg-red-50/70 text-red-950"],
 };
 
 const TITLES = {
@@ -22,14 +22,40 @@ export const SCORE_TOOLTIP =
 
 function ImagePanel({ title, src }) {
   return (
-    <figure className="min-w-0 rounded-lg border border-slate-200 bg-white p-2">
-      <figcaption className="mb-2 text-sm font-medium text-slate-600">{title}</figcaption>
-      <img src={src} alt={title} className="w-full rounded bg-black object-contain" />
+    <figure className="min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <figcaption className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</figcaption>
+      <div className="overflow-hidden rounded-lg bg-slate-950">
+        <img src={src} alt={title} className="mx-auto max-h-[60vh] w-full object-contain" />
+      </div>
     </figure>
   );
 }
 
-export default function Results({ result, onReset }) {
+function ScoreBar({ score, threshold }) {
+  const pos = (v) => `${Math.min(Math.max(v, 0), 1) * 100}%`;
+  return (
+    <div className="mt-3.5" role="img" aria-label={`Suspicion score ${score.toFixed(2)} on a scale from 0 to 1, cut-off ${threshold.toFixed(2)}`}>
+      <div className="relative h-2.5 rounded-full bg-slate-200">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500"
+          style={{ width: `${Math.min(Math.max(score, 0), 1) * 100}%` }}
+        />
+        <div
+          className="absolute -top-1 bottom-[-4px] w-0.5 bg-slate-800 z-10"
+          style={{ left: pos(threshold) }}
+          title={`Cut-off ${threshold.toFixed(2)}`}
+        />
+      </div>
+      <div className="mt-1.5 flex justify-between text-[11px] font-medium text-slate-500">
+        <span>0 (low)</span>
+        <span className="text-slate-700">cut-off: {threshold.toFixed(2)}</span>
+        <span>1 (high)</span>
+      </div>
+    </div>
+  );
+}
+
+export default function Results({ result, onReset, onRerun }) {
   const decision = result.decision; // "fracture" | "no_fracture" | null
   const style = (STATUS_STYLE[result.status] || STATUS_STYLE.error)[0];
   const hasImages = Boolean(result.original_image);
@@ -44,33 +70,45 @@ export default function Results({ result, onReset }) {
 
   return (
     <section className="space-y-4" aria-live="polite">
-      <div className="rounded-lg border-2 border-red-600 bg-red-50 p-3 text-sm font-semibold text-red-900" role="note">
+      {/* Notice */}
+      <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-xs font-semibold text-red-900" role="note">
         {result.notice || DEFAULT_NOTICE}
       </div>
 
+      {/* Scope Warning */}
       {bodyPart.length > 0 && (
-        <div className="rounded-lg border border-yellow-400 bg-yellow-100 p-3 text-sm font-medium text-yellow-900" role="alert">
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs font-medium text-amber-900" role="alert">
           {bodyPart.map((w, i) => <p key={i}>{w}</p>)}
         </div>
       )}
 
+      {/* Quality/Other Warnings */}
       {otherWarnings.length > 0 && (
-        <div className="rounded-lg border border-yellow-400 bg-yellow-100 p-3 text-sm text-yellow-900" role="alert">
-          <p className="font-semibold">Warnings</p>
-          <ul className="ml-5 list-disc">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900" role="alert">
+          <p className="font-semibold">Quality notes:</p>
+          <ul className="mt-1 ml-4 list-disc space-y-0.5">
             {otherWarnings.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
         </div>
       )}
 
-      <div className={`rounded-lg border p-4 ${style}`}>
-        <h2 className="text-xl font-bold">{decisionTitle}</h2>
+      {/* Primary Decision Banner */}
+      <div className={`rounded-xl border p-5 shadow-sm ${style}`}>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-xl font-bold tracking-tight">{decisionTitle}</h2>
+          {scores && (
+            <span className="rounded bg-white/80 border border-current px-2 py-0.5 text-xs font-semibold">
+              Mode: {result.decision_mode === "balanced" ? "Balanced" : "Screening"}
+            </span>
+          )}
+        </div>
+
         {scores && (
-          <p className="mt-1 text-sm">
-            Suspicion score {scores.combined.toFixed(2)}{" "}
-            <span className="opacity-80">(relative scale, not a probability)</span>{" "}
+          <div className="mt-2 text-sm">
+            <span className="font-semibold">Suspicion score {scores.combined.toFixed(2)}</span>{" "}
+            <span className="text-xs opacity-75">(relative scale, not a probability)</span>{" "}
             <span
-              className="ml-1 inline-flex h-5 w-5 cursor-help items-center justify-center rounded-full border border-current text-xs font-bold"
+              className="inline-flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-current text-[10px] font-bold"
               title={SCORE_TOOLTIP}
               aria-label={SCORE_TOOLTIP}
               role="img"
@@ -78,65 +116,101 @@ export default function Results({ result, onReset }) {
             >
               ?
             </span>
-            <span className="ml-2 opacity-80">
-              Cut-off {scores.threshold.toFixed(2)} ({result.decision_mode === "balanced" ? "Balanced" : "Screening"})
-            </span>
-          </p>
+          </div>
         )}
-        <p className="mt-2">{result.message}</p>
+
+        {scores && <ScoreBar score={scores.combined} threshold={scores.threshold} />}
+
+        <p className="mt-3 text-sm leading-relaxed">{result.message}</p>
+
         {result.status !== "error" && total != null && (
-          <p className="mt-2 text-xs opacity-80">
-            Processed in {(total / 1000).toFixed(2)} s{result.model_version && result.model_version !== "none" ? ` · Model: ${result.model_version}` : ""}
+          <p className="mt-3 text-xs opacity-70">
+            Analysis time: {(total / 1000).toFixed(2)}s{result.model_version && result.model_version !== "none" ? ` · Model: ${result.model_version}` : ""}
           </p>
         )}
       </div>
 
-      {hasImages && result.status === "retake" && <ImagePanel title="Your photo" src={result.original_image} />}
+      {/* Visual results */}
+      {hasImages && result.status === "retake" && <ImagePanel title="Uploaded photo" src={result.original_image} />}
       {hasImages && result.status !== "retake" && result.status !== "error" && (
-        <ImagePanel title={findings.length ? "Your photo with suspected regions" : "Your photo (de-identified)"} src={result.annotated_image || result.original_image} />
+        <ImagePanel title={findings.length ? "Analyzed photo with suspected regions" : "Analyzed photo (de-identified)"} src={result.annotated_image || result.original_image} />
       )}
 
+      {/* Cleaned image toggle */}
       {result.cleaned_image && result.status !== "retake" && result.status !== "error" && (
-        <details className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
-          <summary className="cursor-pointer font-medium">What the AI saw (cleaned image)</summary>
-          <p className="mt-2 text-xs text-slate-600">The classifier looks at this cleaned, contrast-normalised version. The detector uses your original photo.</p>
-          <img src={result.cleaned_image} alt="Cleaned image used by the classifier" className="mt-2 w-full rounded bg-black object-contain" />
+        <details className="card text-sm">
+          <summary className="cursor-pointer font-medium text-slate-800 hover:text-blue-600">
+            What the AI saw (cleaned image)
+          </summary>
+          <p className="mt-2 text-xs text-slate-500">
+            The classifier processes this cleaned, contrast-flattened version to reduce glare/lighting bias. The detector identifies boxes on the original photo.
+          </p>
+          <div className="mt-2.5 overflow-hidden rounded-lg bg-slate-950">
+            <img src={result.cleaned_image} alt="Cleaned image used by the classifier" className="mx-auto max-h-[50vh] w-full object-contain" />
+          </div>
         </details>
       )}
 
+      {/* Detected regions list */}
       {findings.length > 0 && (
-        <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="mb-2 font-semibold">Findings</h3>
+        <div className="card">
+          <h3 className="mb-2.5 text-xs font-bold uppercase tracking-wider text-slate-500">Detected Regions ({findings.length})</h3>
           <ul className="divide-y divide-slate-100">
             {findings.map((f, i) => (
-              <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 text-sm">
-                <span
-                  className={`inline-block h-3 w-3 shrink-0 rounded-sm ${f.low_confidence ? "border-2 border-dashed border-orange-500" : "bg-blue-600"}`}
-                  aria-hidden="true"
-                />
-                <span className="font-medium">Suspected fracture {i + 1}</span>
-                {f.view > 0 && <span>view {f.view + 1}</span>}
-                <span className="font-semibold">box confidence {f.confidence.toFixed(2)}</span>
-                {f.low_confidence && (
-                  <span className="rounded bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-800">low confidence</span>
-                )}
+              <li key={i} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-block h-2.5 w-2.5 rounded-full ${f.low_confidence ? "bg-orange-500" : "bg-blue-600"}`}
+                    aria-hidden="true"
+                  />
+                  <span className="font-medium text-slate-800">Suspected fracture {i + 1}</span>
+                  {f.view > 0 && <span className="text-xs text-slate-500">(view {f.view + 1})</span>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-700">confidence: {f.confidence.toFixed(2)}</span>
+                  {f.low_confidence && (
+                    <span className="rounded bg-orange-50 border border-orange-200 px-2 py-0.5 text-[11px] font-medium text-orange-800">
+                      low confidence
+                    </span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
         </div>
       )}
 
+      {/* Threshold and diagnostics detail */}
       {result.thresholds && result.status !== "error" && (
-        <p className="text-xs text-slate-500">
-          Boxes shown at detector confidence ≥ {result.thresholds.conf}, low confidence below {result.thresholds.low_conf}, image size {result.thresholds.imgsz}, quality mode {result.thresholds.quality_mode}.
-          {result.quality?.sharpness != null && ` Sharpness ${result.quality.sharpness}, contrast ${result.quality.contrast}.`}
-          {result.timings_ms && ` Steps: clean ${result.timings_ms.clean} ms, detector ${result.timings_ms.yolo} ms, classifier ${result.timings_ms.resnet} ms.`}
-        </p>
+        <div className="rounded-lg bg-slate-100/70 p-3 text-[11px] text-slate-500 space-y-1">
+          <p>
+            Box display confidence ≥ {result.thresholds.conf} · Low confidence below {result.thresholds.low_conf} · Image size {result.thresholds.imgsz}px
+            {result.quality?.sharpness != null && ` · Sharpness ${result.quality.sharpness} · Contrast ${result.quality.contrast}`}
+          </p>
+          {result.timings_ms && (
+            <p className="text-slate-400">
+              Pipeline breakdown: clean {result.timings_ms.clean}ms, detector {result.timings_ms.yolo}ms, classifier {result.timings_ms.resnet}ms
+            </p>
+          )}
+        </div>
       )}
 
-      <button onClick={onReset} className="w-full rounded bg-blue-600 px-4 py-3 font-medium text-white sm:w-auto">
-        Try another image
-      </button>
+      {/* Action buttons */}
+      <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+        <button onClick={onReset} className="btn-primary">
+          Try another image
+        </button>
+        {onRerun && scores && (
+          <button onClick={onRerun} className="btn-secondary">
+            Re-analyse with {result.decision_mode === "balanced" ? "Screening" : "Balanced"} sensitivity
+          </button>
+        )}
+        {result.annotated_image && result.status !== "error" && result.status !== "retake" && (
+          <a href={result.annotated_image} download="ortholens-result.jpg" className="btn-secondary text-center">
+            Save annotated image
+          </a>
+        )}
+      </div>
     </section>
   );
 }

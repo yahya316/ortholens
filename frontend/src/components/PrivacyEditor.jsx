@@ -81,43 +81,49 @@ export default function PrivacyEditor({ file, onConfirm, onCancel, cancelLabel }
 
   if (loadError) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
         <p>{loadError}</p>
-        <button onClick={onCancel} className="mt-3 rounded bg-slate-800 px-4 py-2 text-white">Back</button>
+        <button onClick={onCancel} className="mt-3 btn-secondary">Back</button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-slate-700">
-        Optional: drag on the image to black out names or patient IDs. The image is only sent after you press
-        “Upload and analyse”, and the blacked-out version is what is sent.
-      </p>
-      <canvas
-        ref={canvasRef}
-        onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={up}
-        onPointerCancel={up}
-        aria-label="Image preview. Drag to draw black boxes over private information."
-        className="mx-auto max-h-[65vh] w-full cursor-crosshair rounded-lg bg-black object-contain"
-        style={{ touchAction: "none" }}
-      />
-      <div className="flex flex-wrap gap-2">
-        <button onClick={() => setRects((r) => r.slice(0, -1))} disabled={!rects.length} className="rounded border border-slate-400 bg-white px-3 py-2 text-sm disabled:opacity-40">
-          Undo
-        </button>
-        <button onClick={() => setRects([])} disabled={!rects.length} className="rounded border border-slate-400 bg-white px-3 py-2 text-sm disabled:opacity-40">
-          Clear
-        </button>
-        <span className="self-center text-xs text-slate-500">{rects.length} area{rects.length === 1 ? "" : "s"} hidden</span>
+    <div className="card space-y-4">
+      <div className="border-b border-slate-100 pb-3">
+        <h3 className="text-base font-semibold text-slate-900">Privacy tool: redact patient info</h3>
+        <p className="mt-1 text-xs text-slate-500">
+          Optional: drag on the image to draw black boxes over names, dates, or IDs. Only the redacted image is uploaded.
+        </p>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <button onClick={confirm} disabled={!ready} className="rounded bg-blue-600 px-4 py-3 font-medium text-white disabled:opacity-50">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-900">
+        <canvas
+          ref={canvasRef}
+          onPointerDown={down}
+          onPointerMove={move}
+          onPointerUp={up}
+          onPointerCancel={up}
+          aria-label="Image preview. Drag to draw black boxes over private information."
+          className="mx-auto max-h-[60vh] w-full cursor-crosshair object-contain"
+          style={{ touchAction: "none" }}
+        />
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex gap-2">
+          <button onClick={() => setRects((r) => r.slice(0, -1))} disabled={!rects.length} className="btn-secondary !py-1.5 !px-3 text-xs">
+            Undo
+          </button>
+          <button onClick={() => setRects([])} disabled={!rects.length} className="btn-secondary !py-1.5 !px-3 text-xs">
+            Clear all
+          </button>
+        </div>
+        <span className="text-xs text-slate-500">{rects.length} area{rects.length === 1 ? "" : "s"} hidden</span>
+      </div>
+      <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+        <button onClick={confirm} disabled={!ready} className="btn-primary">
           Upload and analyse
         </button>
-        <button onClick={onCancel} className="rounded border border-slate-400 bg-white px-4 py-3">{cancelLabel}</button>
+        <button onClick={onCancel} className="btn-secondary">{cancelLabel}</button>
       </div>
     </div>
   );

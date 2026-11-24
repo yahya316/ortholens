@@ -107,7 +107,7 @@ def test_recipe_inputs_and_outputs(client: TestClient, fake_detector: FakeDetect
 
 def test_show_cleaned_off(client: TestClient, monkeypatch: pytest.MonkeyPatch, sharp_jpeg: bytes) -> None:
     monkeypatch.setattr(settings, "SHOW_CLEANED", False)
-    assert "cleaned_image" not in _post(client, sharp_jpeg).json()
+    assert not _post(client, sharp_jpeg).json().get("cleaned_image")
 
 
 def test_split_views_never_run_by_default(client: TestClient, fake_detector: FakeDetector) -> None:

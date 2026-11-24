@@ -3,9 +3,12 @@ export const LIMITATIONS_TEXT =
 
 export default function Limitations() {
   return (
-    <details className="rounded-lg border border-slate-300 bg-white p-3 text-sm">
-      <summary className="cursor-pointer font-medium">Limitations</summary>
-      <p className="mt-2 text-slate-700">{LIMITATIONS_TEXT}</p>
+    <details className="card group text-sm">
+      <summary className="flex cursor-pointer list-none items-center justify-between font-semibold">
+        <span>Limitations</span>
+        <span className="text-slate-400 transition group-open:rotate-180" aria-hidden="true">▾</span>
+      </summary>
+      <p className="mt-3 text-slate-700">{LIMITATIONS_TEXT}</p>
     </details>
   );
 }
